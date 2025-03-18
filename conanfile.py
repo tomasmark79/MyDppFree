@@ -33,7 +33,7 @@ class DotNameCppRecipe(ConanFile):
         # self.requires("nlohmann_json/[~3.11]")
         # self.requires("yaml-cpp/0.8.0")
         self.requires("opus/1.5.2")
-        self.requires("openssl/[3.4.1]")
+        self.requires("openssl/[3.2.4]")
         self.requires("libcurl/8.12.1")
 
     def build_requirements(self):

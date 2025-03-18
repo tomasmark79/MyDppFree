@@ -89,6 +89,11 @@ bool MyDpp::initCluster() {
         return false;
       }
 
+      // RedHats childs needs for failed ssl contexts in
+      // in /etc/ssl/openssl.cnf
+      // https://github.com/openssl/openssl/discussions/23016
+      // config_diagnostics = 1 to config_diagnostics = 0
+
       MyDpp::m_bot = std::make_unique<dpp::cluster>(
           token, dpp::i_default_intents | dpp::i_message_content);
 
@@ -414,6 +419,17 @@ std::string MyDpp::getCzechExchangeRate() {
 }
 
 bool MyDpp::loadVariousBotCommands() {
+
+  m_bot->on_log([&](const dpp::log_t &log) {
+    // std::cout << "[" << dpp::utility::current_date_time() << "] "
+    //           << dpp::utility::loglevel(log.severity) << ": " << log.message
+    //           << std::endl;
+
+    LOG_D << "[" << dpp::utility::current_date_time() << "] "
+          << dpp::utility::loglevel(log.severity) << ": " << log.message
+          << std::endl;
+  });
+
   m_bot->on_slashcommand([&, this](const dpp::slashcommand_t &event) {
     if (event.command.get_command_name() == "verse") {
       std::string message = getCzechBibleVerse();
