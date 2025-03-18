@@ -99,7 +99,7 @@ bool MyDpp::initCluster() {
 
       m_bot->log(dpp::ll_debug, "DSDotBot");
 
-      welcomeWithNeofetch();
+      welcomeWithFastfetch();
       startPollingFortune();
       startPollingBTCPrice();
       startPollingCZExchRate();
@@ -115,6 +115,24 @@ bool MyDpp::initCluster() {
       return false;
     }
   }
+  return true;
+}
+
+bool MyDpp::welcomeWithFastfetch() {
+  // DSDotBot loaded
+  m_bot->on_ready([&](const dpp::ready_t &event) {
+    dpp::message msg(channelDev, "DSDotBot loaded:\n");
+    m_bot->message_create(msg);
+    try {
+      dpp::message msgFastfetch(
+          channelDev, this->getLinuxFastfetchCpp().substr(0, 8192-2) + "\n");
+      m_bot->message_create(msgFastfetch);
+      LOG_D << msgFastfetch.content << std::endl;
+
+    } catch (const std::runtime_error &e) {
+      LOG_E << "Error: " << e.what() << std::endl;
+    }
+  });
   return true;
 }
 
@@ -281,6 +299,27 @@ std::string MyDpp::getLinuxFortuneCpp() {
 
   return result.str();
 }
+
+std::string MyDpp::getLinuxFastfetchCpp() {
+  constexpr size_t bufferSize = 2000;
+  std::stringstream result;
+
+  // Create unique_ptr with custom deleter for RAII
+  std::unique_ptr<FILE, decltype(&pclose)> pipe(popen("fastfetch -c archey.jsonc --pipe --logo none", "r"),
+                                                pclose);
+  if (!pipe)
+    throw std::runtime_error("Failed to run fastfetch command");
+
+  std::array<char, bufferSize> buffer;
+  while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
+    result << buffer.data();
+    if (result.str().size() > bufferSize - 2)
+      break;
+  }
+
+  return result.str();
+}
+
 
 std::string MyDpp::getLinuxNeofetchCpp() {
   constexpr size_t bufferSize = 2000;
@@ -499,9 +538,9 @@ bool MyDpp::loadVariousBotCommands() {
     }
 
     if (event.command.get_command_name() == "bot") {
-      dpp::message msgNeofetch(
-          channelDev, this->getLinuxNeofetchCpp().substr(0, 1998) + "\n");
-      event.reply(msgNeofetch);
+      dpp::message msgFastfetch(
+          channelDev, this->getLinuxFastfetchCpp().substr(0, 8192-2) + "\n");
+      event.reply(msgFastfetch);
     }
   });
 

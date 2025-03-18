@@ -29,11 +29,13 @@ public:
   bool startPollingCZExchRate();
   bool startPollingGetBibleVerse();
 
+  bool welcomeWithFastfetch();
   bool welcomeWithNeofetch();
   bool initCluster();
   bool getToken(std::string &token, const std::string &filePath);
 
   std::string getLinuxFortuneCpp();
+  std::string getLinuxFastfetchCpp();
   std::string getLinuxNeofetchCpp();
   std::string getBitcoinPrice();
   std::string getCzechBibleVerse();
