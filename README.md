@@ -1,7 +1,5 @@
 # Discord Bot
 
-[![Linux](https://github.com/tomasmark79/MyDppFree/actions/workflows/linux.yml/badge.svg)](https://github.com/tomasmark79/MyDppFree/actions/workflows/linux.yml)
-
 This is a simple DiscordBot that uses the D++ framework and is embedded in the DotNameCpp project template.
 
 ---
