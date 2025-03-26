@@ -87,7 +87,7 @@ CPMAddPackage(
     NAME dpp
     GITHUB_REPOSITORY brainboxdotcc/DPP
     GIT_TAG v10.1.2
-    OPTIONS "BUILD_SHARED_LIBS ON" "DPP_BUILD_TEST OFF" "DPP_INSTALL ON")
+    OPTIONS "BUILD_SHARED_LIBS ON" "DPP_BUILD_TEST OFF" "DPP_INSTALL ON" "DPP_NO_CORO ON")
 
 find_package(dpp REQUIRED)
 
@@ -158,8 +158,8 @@ target_compile_options(
 # Set compile features
 # C++ version from Conan Profile has priority over this setting
 # ==============================================================================
-target_compile_features(${LIBRARY_NAME} PUBLIC cxx_std_20)
-set(CMAKE_CXX_STANDARD 20)
+target_compile_features(${LIBRARY_NAME} PUBLIC cxx_std_17)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 

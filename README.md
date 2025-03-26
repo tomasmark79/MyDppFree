@@ -2,6 +2,8 @@
 
 This is a simple DiscordBot that uses the D++ framework and is embedded in the DotNameCpp project template.
 
+C++17 is configured without coroutine support in D++ to ensure compatibility with the aarch64 platform using the older 2.17 ABI.
+
 ---
 
 ![alt text](assets/logo.png)
