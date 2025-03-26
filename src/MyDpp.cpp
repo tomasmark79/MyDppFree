@@ -52,7 +52,7 @@ std::atomic<bool> stopRefreshMessageThread (false);
 #define REGULAR_REFRESH_MESSAGE_INTERVAL_SEC (int)10800 // 3 hours
 
 std::atomic<bool> stopGetBitcoinPrice (false);
-#define BITCOIN_PRICE_MESSAGE_INTERVAL_SEC (int)21600 // 6 hours
+#define BITCOIN_PRICE_MESSAGE_INTERVAL_SEC (int)43200 * 2 // 24 hours
 
 std::atomic<bool> stopGetGithubInfo (false);
 #define GITHUB_INFO_MESSAGE_INTERVAL_SEC (int)43200 // 12 hours
@@ -64,14 +64,14 @@ std::atomic<bool> stopGithubEventPooling (false);
 #define GITHUB_EVENT_POLLING_INTERVAL_SEC (int)10
 
 std::atomic<bool> stopGetCzechBibleVersePooling (false);
-#define CZECH_BIBLE_VERSE_POLLING_INTERVAL_SEC (int)60 * 60 // 1 hour
+#define CZECH_BIBLE_VERSE_POLLING_INTERVAL_SEC (int)43200 // 12 hours
 
 namespace library
 {
 
   MyDpp::MyDpp (const std::string &assetsPath) : m_assetsPath (assetsPath)
   {
-    LOG_IMPORTANT ("MyDpp v." + std::string (MYDPP_VERSION) + " constructed.");
+    LOG_INFO ("MyDpp v." + std::string (MYDPP_VERSION) + " constructed.");
     LOG_DEBUG ("Assets Path: " + this->m_assetsPath);
 
     this->initCluster ();
@@ -105,6 +105,12 @@ namespace library
 
         m_bot->log (dpp::ll_debug, "DSDotBot");
 
+        std::string message = std::string ("C++ DSDotBot 🛸🛸🛸 ")
+                              + DPP_VERSION_TEXT + " loaded.\n";
+        dpp::message msg (channelDev, message);
+        m_bot->message_create (msg);
+        LOG_I << message << std::endl;
+
         welcomeWithFastfetch ();
         startPollingFortune ();
         startPollingBTCPrice ();
@@ -131,8 +137,6 @@ namespace library
     m_bot->on_ready (
       [&] (const dpp::ready_t &event)
       {
-        dpp::message msg (channelDev, "DSDotBot loaded:\n");
-        m_bot->message_create (msg);
         try
         {
           dpp::message msgFastfetch (
@@ -155,8 +159,6 @@ namespace library
     m_bot->on_ready (
       [&] (const dpp::ready_t &event)
       {
-        dpp::message msg (channelDev, "DSDotBot loaded:\n");
-        m_bot->message_create (msg);
         try
         {
           dpp::message msgNeofetch (
@@ -211,7 +213,7 @@ namespace library
           {
             try
             {
-              std::string message = emojiTools.getRandomEmoji (emoji);
+              std::string message = emojiTools.getRandomEmoji ();
               // LOG_D << message << std::endl;
               dpp::message msg (channelDev, message);
               m_bot->message_create (msg);
@@ -629,7 +631,9 @@ namespace library
 
         if (event.command.get_command_name () == "emoji")
         {
-          event.reply (emojiTools.getRandomEmoji (emoji));
+          std::string buf = emojiTools.getRandomEmoji ();
+          LOG_I << buf << std::endl;
+          event.reply (buf);
         }
 
         if (event.command.get_command_name () == "ping")

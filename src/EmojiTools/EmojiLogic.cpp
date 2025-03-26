@@ -21,7 +21,9 @@ char8_t *EmojiBuilder::encodeUtf8 (char32_t emojiCodePoint, char8_t *buffer8)
     return static_cast<char8_t> (x);
   };
 
-  char32_t continuation = 0b1000'0000; // 128 if (emojiCodePoint >= 65536)
+  char32_t continuation = 128; // 0b1000'0000;
+
+  if (emojiCodePoint >= 65536)
   {
     *buffer8++ = byte(0b1111'0000 | (emojiCodePoint >> 18));
     *buffer8++ = byte(continuation | ((emojiCodePoint >> 12) & 0b0011'1111));
@@ -242,7 +244,7 @@ EmojiTransmitter::getEmojiChar8_tCharByCodePoint (char32_t *emojiCodePoints,
   return emojiBuilder.getEmojiChar8_tCharByCodePoint (emojiCodePoints, length);
 }
 
-std::string &EmojiTransmitter::getRandomEmoji (std::string &randomEmoji)
+std::string EmojiTransmitter::getRandomEmoji ()
 {
   std::uniform_int_distribution<> dis (0, 5);
   int a = dis (gen);
@@ -250,26 +252,18 @@ std::string &EmojiTransmitter::getRandomEmoji (std::string &randomEmoji)
   switch (a)
   {
   case 0:
-    randomEmoji = this->getRandomEmojiFromGroup ("Smileys & Emotion");
-    break;
+    return this->getRandomEmojiFromGroup ("Smileys & Emotion");
   case 1:
-    randomEmoji = this->getRandomEmojiFromGroup ("Animals & Nature");
-    break;
+    return this->getRandomEmojiFromGroup ("Animals & Nature");
   case 2:
-    randomEmoji = this->getRandomEmojiFromGroup ("Food & Drink");
-    break;
+    return this->getRandomEmojiFromGroup ("Food & Drink");
   case 3:
-    randomEmoji = this->getRandomEmojiFromGroup ("Activities");
-    break;
+    return this->getRandomEmojiFromGroup ("Activities");
   case 4:
-    randomEmoji = this->getRandomEmojiFromGroup ("Travel & Places");
-    break;
+    return this->getRandomEmojiFromGroup ("Travel & Places");
   default:
-    randomEmoji = this->getRandomEmojiFromGroup ("Objects");
-    break;
+    return this->getRandomEmojiFromGroup ("Objects");
   }
-
-  return randomEmoji;
 }
 
 std::string EmojiTransmitter::getRandomEmojiFromGroup (std::string emojiGroup)

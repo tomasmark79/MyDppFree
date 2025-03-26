@@ -86,7 +86,7 @@ cpm_licenses_create_disclaimer_target(
 CPMAddPackage(
     NAME dpp
     GITHUB_REPOSITORY brainboxdotcc/DPP
-    GIT_TAG master
+    GIT_TAG v10.1.2
     OPTIONS "BUILD_SHARED_LIBS ON" "DPP_BUILD_TEST OFF" "DPP_INSTALL ON")
 
 find_package(dpp REQUIRED)

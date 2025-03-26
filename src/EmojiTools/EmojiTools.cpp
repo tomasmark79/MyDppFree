@@ -4,13 +4,6 @@
 // #include <emojitools/version.h>
 #include <iostream>
 
-EmojiTools::EmojiTools ()
-{
-  // std::cout << "--- EmojiTools v." << EMOJITOOLS_VERSION << " instantiated
-  // ---" << std::endl;
-}
+EmojiTools::EmojiTools () { ; }
 
-EmojiTools::~EmojiTools ()
-{
-  // std::cout << "--- EmojiTools uninstantiated ---" << std::endl;
-}
+EmojiTools::~EmojiTools () { ; }
