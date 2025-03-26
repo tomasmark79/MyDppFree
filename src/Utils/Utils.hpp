@@ -16,8 +16,9 @@
 // MIT License
 // Copyright (c) 2024-2025 Tomáš Mark
 
-namespace FileSystemManager {
-std::string read(const std::string &filename);
-std::string getExecutableDirectory();
+namespace FileSystemManager
+{
+  std::string read (const std::string &filename);
+  std::string getExecutableDirectory ();
 } // namespace FileSystemManager
 #endif // UTILS_HPP
