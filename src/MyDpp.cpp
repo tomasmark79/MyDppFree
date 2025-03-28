@@ -16,6 +16,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <thread>
+#include <string>
 
 #ifdef _WIN32
   #include <cstdio>
@@ -42,33 +43,31 @@ std::string emoji;
 
 const dpp::snowflake channelDev = 1327591560065449995;
 
-std::atomic<bool> stopRefreshEmojies (false);
 std::atomic<bool> isRefreshEmojiesRunning (false);
-std::atomic<bool> isGetBibleVerseRunning (false);
-
 #define REGULAR_REFRESH_EMOJIES_MESSAGE_INTERVAL_SEC (int)10 // CCA 3 hours
+std::atomic<bool> stopRefreshEmojies (false);
 
-std::atomic<bool> stopRefreshMessageThread (false);
 #define REGULAR_REFRESH_MESSAGE_INTERVAL_SEC (int)10800 // 3 hours
+std::atomic<bool> stopRefreshMessageThread (false);
 
-std::atomic<bool> stopGetBitcoinPrice (false);
 #define BITCOIN_PRICE_MESSAGE_INTERVAL_SEC (int)43200 * 2 // 24 hours
+std::atomic<bool> stopGetBitcoinPrice (false);
 
-std::atomic<bool> stopGetGithubInfo (false);
 #define GITHUB_INFO_MESSAGE_INTERVAL_SEC (int)43200 // 12 hours
+std::atomic<bool> stopGetGithubInfo (false);
 
-std::atomic<bool> stopGetCzechExchangeRates (false);
 #define CZECH_EXCHANGERATES_MESSAGE_INTERVAL_SEC (int)43200 * 2 // 24 hours
+std::atomic<bool> stopGetCzechExchangeRates (false);
 
-std::atomic<bool> stopGithubEventPooling (false);
 #define GITHUB_EVENT_POLLING_INTERVAL_SEC (int)10
+std::atomic<bool> stopGithubEventPooling (false);
 
-std::atomic<bool> stopGetCzechBibleVersePooling (false);
+std::atomic<bool> isGetBibleVerseRunning (false);
 #define CZECH_BIBLE_VERSE_POLLING_INTERVAL_SEC (int)43200 // 12 hours
+std::atomic<bool> stopGetCzechBibleVersePooling (false);
 
 namespace library
 {
-
   MyDpp::MyDpp (const std::string &assetsPath) : m_assetsPath (assetsPath)
   {
     LOG_INFO ("MyDpp v." + std::string (MYDPP_VERSION) + " constructed.");
@@ -76,14 +75,11 @@ namespace library
 
     this->initCluster ();
   }
-
   MyDpp::~MyDpp () { LOG_DEBUG ("MyDpp deconstructed."); }
 
   bool MyDpp::initCluster ()
   {
-
     std::string token;
-
     if (getToken (token, DISCORD_OAUTH_TOKEN_FILE))
     {
       try
@@ -105,8 +101,7 @@ namespace library
 
         m_bot->log (dpp::ll_debug, "DSDotBot");
 
-        std::string message = std::string ("C++ DSDotBot 🛸🛸🛸 ")
-                              + DPP_VERSION_TEXT + " loaded.\n";
+        std::string message = this->getEnvironmentInfo ();
         dpp::message msg (channelDev, message);
         m_bot->message_create (msg);
         LOG_I << message << std::endl;
@@ -129,6 +124,12 @@ namespace library
       }
     }
     return true;
+  }
+
+  std::string MyDpp::getEnvironmentInfo ()
+  {
+    return std::string ("C++ DSDotBot 🛸🛸🛸 ") + DPP_VERSION_TEXT
+           + " loaded.\n";
   }
 
   bool MyDpp::welcomeWithFastfetch ()

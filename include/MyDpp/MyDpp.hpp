@@ -24,6 +24,7 @@ namespace library
     // alternatively, you can use a getter function
     const std::string getAssetsPath () const { return m_assetsPath; }
 
+    std::string getEnvironmentInfo ();
     bool loadVariousBotCommands ();
     bool startPollingEmojies ();
     bool startPollingFortune ();
