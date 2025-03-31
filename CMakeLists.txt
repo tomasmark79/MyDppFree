@@ -91,6 +91,15 @@ CPMAddPackage(
 
 find_package(dpp REQUIRED)
 
+# emojitools
+CPMAddPackage(
+    NAME EmojiTools
+    GITHUB_REPOSITORY tomasmark79/EmojiToolsFree
+    GIT_TAG main)
+
+set(RESULT, 0)
+file(COPY ${EmojiTools_SOURCE_DIR}/assets DESTINATION ${CMAKE_CURRENT_SOURCE_DIR})
+
 # ==============================================================================
 # include/ for public header files intended for use in other projects or modules.
 # ==============================================================================
@@ -154,6 +163,12 @@ target_compile_options(
         "$<$<AND:$<NOT:$<COMPILE_LANG_AND_ID:CXX,MSVC>>,$<PLATFORM_ID:Darwin>>:-Wall;-Wextra;-Wpedantic>"
 )
 
+# message(STATUS "EmojiTools_SOURCE_DIR: ${EmojiTools_SOURCE_DIR}")
+# target_compile_definitions(
+#     ${LIBRARY_NAME}
+#     PRIVATE "$<$<NOT:$<CONFIG:Debug>>:EMOJITOOLS_SOURCE_DIR=\"${EmojiTools_SOURCE_DIR}\">"
+#     PRIVATE "$<$<CONFIG:Debug>:EMOJITOOLS_SOURCE_DIR=\"${EmojiTools_SOURCE_DIR}\">")
+
 # ==============================================================================
 # Set compile features
 # C++ version from Conan Profile has priority over this setting
@@ -170,12 +185,13 @@ target_link_libraries(
     ${LIBRARY_NAME}
     PRIVATE fmt::fmt
     PRIVATE ZLIB::ZLIB
-            #  PRIVATE nlohmann_json::nlohmann_json
-            #  PRIVATE yaml-cpp
+    #  PRIVATE nlohmann_json::nlohmann_json
+    #  PRIVATE yaml-cpp
     PUBLIC OpenSSL::SSL
     PUBLIC Opus::opus
     PUBLIC CURL::libcurl
-    PUBLIC dpp)
+    PUBLIC dpp
+    PUBLIC dsdotname::EmojiTools)
 
 # ==============================================================================
 # set packageProject arttributes

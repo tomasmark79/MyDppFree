@@ -10,6 +10,8 @@
 #include <random>
 #include <string>
 
+#include <EmojiTools/EmojiTools.hpp>
+
 // Public API
 
 namespace library
@@ -49,6 +51,10 @@ namespace library
   private:
     std::string m_assetsPath;
     std::unique_ptr<dpp::cluster> m_bot;
+
+    std::shared_ptr<EmojiSpace::EmojiTools> emojiTools;
+    std::string emoji;
+
   };
 
 } // namespace library

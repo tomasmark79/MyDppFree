@@ -6,7 +6,6 @@
 #include <MyDpp/version.h>
 #include <Utils/Utils.hpp>
 
-#include <EmojiTools/EmojiTools.hpp>
 #include <curl/curl.h>
 #include <fmt/format.h>
 
@@ -37,9 +36,6 @@
 #define URL_EXCHANGE_RATES_CZ                                                 \
   "https://www.cnb.cz/cs/financni-trhy/devizovy-trh/kurzy-devizoveho-trhu/"   \
   "kurzy-devizoveho-trhu/denni_kurz.txt"
-
-EmojiTools emojiTools;
-std::string emoji;
 
 const dpp::snowflake channelDev = 1327591560065449995;
 
@@ -73,6 +69,8 @@ namespace library
     LOG_INFO ("MyDpp v." + std::string (MYDPP_VERSION) + " constructed.");
     LOG_DEBUG ("Assets Path: " + this->m_assetsPath);
 
+    this->emojiTools = std::make_shared<EmojiSpace::EmojiTools> (m_assetsPath);
+
     this->initCluster ();
   }
   MyDpp::~MyDpp () { LOG_DEBUG ("MyDpp deconstructed."); }
@@ -84,7 +82,6 @@ namespace library
     {
       try
       {
-
         if (m_bot)
         {
           LOG_E << "Bot is already initialized!" << std::endl;
@@ -214,7 +211,7 @@ namespace library
           {
             try
             {
-              std::string message = emojiTools.getRandomEmoji ();
+              std::string message = emojiTools->getRandomEmoji ();
               // LOG_D << message << std::endl;
               dpp::message msg (channelDev, message);
               m_bot->message_create (msg);
@@ -632,7 +629,7 @@ namespace library
 
         if (event.command.get_command_name () == "emoji")
         {
-          std::string buf = emojiTools.getRandomEmoji ();
+          std::string buf = emojiTools->getRandomEmoji ();
           LOG_I << buf << std::endl;
           event.reply (buf);
         }
