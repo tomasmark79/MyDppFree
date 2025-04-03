@@ -97,7 +97,7 @@ CPMAddPackage(
     GIT_TAG main)
 file(COPY ${EmojiTools_SOURCE_DIR}/assets DESTINATION ${CMAKE_CURRENT_SOURCE_DIR})
 
-# emojitools
+# sunriset
 CPMAddPackage(
     NAME Sunriset
     GITHUB_REPOSITORY tomasmark79/SunrisetFree
