@@ -1,90 +1,79 @@
 // MIT License
 // Copyright (c) 2024-2025 Tomáš Mark
 
-#include <cxxopts.hpp>
-#include <fstream>
-#include <iostream>
-#include <memory>
-
 #include "Logger/Logger.hpp"
 #include "MyDpp/MyDpp.hpp"
 #include "Utils/Utils.hpp"
 
-constexpr char standaloneName[] = "MyDppApp";
+#include <cxxopts.hpp>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+#include <memory>
+#include <string>
+#include <vector>
 
-std::string standaloneExecutableDirectory
-  = FileSystemManager::getExecutableDirectory ();
+namespace Config {
+  constexpr char standaloneName[] = "MyDppApp";
+  const std::filesystem::path executablePath = Utils::FSManager::getExecutePath ();
+  constexpr std::string_view utilsAssetPath = UTILS_ASSET_PATH;
+  constexpr std::string_view utilsFirstAssetFile = UTILS_FIRST_ASSET_FILE;
+  const std::filesystem::path assetsPath = executablePath / utilsAssetPath;
+  const std::filesystem::path assetsPathFirstFile = assetsPath / utilsFirstAssetFile;
+}
 
-/// @brief Main Standalone entry point
-int main (int argc, const char *argv[])
-{
-  // ---basic-information------is-safe-to-delete 👇🏻
-  LOG_I << standaloneName << " / C++ " << __cplusplus << std::endl;
-  LOG_D << "Executable Directory: " << standaloneExecutableDirectory
-        << std::endl;
-  // ----------------------------------delete me 👆🏻
+std::unique_ptr<dotname::MyDpp> uniqueLib;
 
-  // ---assets-testing---------is-safe-to-delete 👇🏻
-  std::string assetFp = standaloneExecutableDirectory + "/"
-                        + static_cast<std::string> (UTILS_ASSET_PATH) + "/"
-                        + static_cast<std::string> (UTILS_FIRST_ASSET_FILE);
-  std::ifstream file (assetFp);
-  try
-  {
-    if (file.is_open ())
-    {
-      LOG_DEBUG ("Opened first asset file: " + assetFp);
-    }
-    else
-    {
-      LOG_ERROR ("No assets found: " + assetFp);
-    }
-  }
-  catch (const std::exception &e)
-  {
-    LOG_ERROR ("Error opening first asset file: " + assetFp);
-  }
-  // ----------------------------------delete me 👆🏻
-
-  // ---argument-parsing-------is-safe-to-delete 👇🏻
-  try
-  {
-    auto options
-      = std::make_unique<cxxopts::Options> (argv[0], standaloneName);
+int processArguments (int argc, const char* argv[]) {
+  try {
+    auto options = std::make_unique<cxxopts::Options> (argv[0], Config::standaloneName);
     options->positional_help ("[optional args]").show_positional_help ();
-    options->set_width (70)
-      .set_tab_expansion ()
-      .allow_unrecognised_options ()
-      .add_options () ("h,help", "Show help") (
-        "o,omit", "Omit library loading",
-        cxxopts::value<bool> ()->default_value ("false"));
-
+    options->set_width (80);
+    options->set_tab_expansion ();
+    options->add_options () ("h,help", "Show help");
+    options->add_options () ("1,omit", "Omit library loading",
+                             cxxopts::value<bool> ()->default_value ("false"));
+    options->add_options () ("2,log2file", "Log to file",
+                             cxxopts::value<bool> ()->default_value ("false"));
     const auto result = options->parse (argc, argv);
 
-    if (result.count ("help"))
-    {
-      LOG_I << options->help ({ "", "Group" }) << std::endl;
+    if (result.count ("help")) {
+      LOG_I_STREAM << options->help ({ "", "Group" }) << std::endl;
       return 0;
     }
-    if (!result.count ("omit"))
-    {
-      const std::string assetsPath
-        = standaloneExecutableDirectory + "/"
-          + static_cast<std::string> (UTILS_ASSET_PATH);
-      std::unique_ptr<library::MyDpp> lib
-        = std::make_unique<library::MyDpp> (assetsPath);
+
+    if (result["log2file"].as<bool> ()) {
+      LOG.enableFileLogging (std::string (Config::standaloneName) + ".log");
+      LOG_D_STREAM << "Logging to file enabled [-2]" << std::endl;
     }
-    else
-    {
-      LOG_W << "Loading library omitted [-o]" << std::endl;
+
+    if (!result.count ("omit")) {
+      // uniqueLib = std::make_unique<dotname::MyDpp> ();
+      uniqueLib = std::make_unique<dotname::MyDpp> (Config::assetsPath);
+    } else {
+      LOG_D_STREAM << "Loading library omitted [-1]" << std::endl;
     }
-  }
-  catch (const cxxopts::exceptions::exception &e)
-  {
-    LOG_E << "error parsing options: " << e.what ();
+
+    if (!result.unmatched ().empty ()) {
+      for (const auto& arg : result.unmatched ()) {
+        LOG_E_STREAM << "Unrecognized option: " << arg << std::endl;
+      }
+      LOG_I_STREAM << options->help () << std::endl;
+      return 1;
+    }
+
+  } catch (const cxxopts::exceptions::exception& e) {
+    LOG_E_STREAM << "error parsing options: " << e.what () << std::endl;
     return 1;
   }
-  // ----------------------------------delete me 👆🏻
+  return 0;
+}
 
+int main (int argc, const char* argv[]) {
+  LOG.noHeader (true);
+  LOG_I_STREAM << "Starting " << Config::standaloneName << " ..." << std::endl;
+  if (processArguments (argc, argv) != 0) {
+    return 1;
+  }
   return 0;
 }

@@ -1,4 +1,3 @@
 /build/
-/backup/
-CMakeUserPresets.json
+/dotnamebackup/
 Solution.log

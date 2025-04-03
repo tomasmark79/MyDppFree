@@ -88,7 +88,6 @@ CPMAddPackage(
     GITHUB_REPOSITORY brainboxdotcc/DPP
     GIT_TAG v10.1.2
     OPTIONS "BUILD_SHARED_LIBS ON" "DPP_BUILD_TEST OFF" "DPP_INSTALL ON" "DPP_NO_CORO ON")
-
 find_package(dpp REQUIRED)
 
 # emojitools
@@ -96,9 +95,14 @@ CPMAddPackage(
     NAME EmojiTools
     GITHUB_REPOSITORY tomasmark79/EmojiToolsFree
     GIT_TAG main)
-
-set(RESULT, 0)
 file(COPY ${EmojiTools_SOURCE_DIR}/assets DESTINATION ${CMAKE_CURRENT_SOURCE_DIR})
+
+# emojitools
+CPMAddPackage(
+    NAME Sunriset
+    GITHUB_REPOSITORY tomasmark79/SunrisetFree
+    GIT_TAG main)
+#file(COPY ${Sunriset_SOURCE_DIR}/assets DESTINATION ${CMAKE_CURRENT_SOURCE_DIR})
 
 # ==============================================================================
 # include/ for public header files intended for use in other projects or modules.
@@ -191,7 +195,9 @@ target_link_libraries(
     PUBLIC Opus::opus
     PUBLIC CURL::libcurl
     PUBLIC dpp
-    PUBLIC dsdotname::EmojiTools)
+    PUBLIC dotname::EmojiTools
+    PUBLIC dotname::Sunriset
+    )
 
 # ==============================================================================
 # set packageProject arttributes
