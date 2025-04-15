@@ -217,7 +217,7 @@ packageProject(
     INCLUDE_HEADER_PATTERN "*.h;*.hpp;*.hh;*.hxx"
     # semicolon separated list of the project's dependencies
     # DEPENDENCIES "zlib#1.2.11;fmt#11.1.1;CPMLicenses.cmake@0.0.7;nlohmann_json#3.11.2"
-    DEPENDENCIES "fmt#11.1.0;CPMLicenses.cmake@0.0.7"
+    DEPENDENCIES "fmt#11.1.0;CPMLicenses.cmake@0.0.7;Sunriset#0.0.1;EmojiTools#0.0.1"
     # (optional) create a header containing the version info
     # Note: that the path to headers should be lowercase, but is not enforced
     VERSION_HEADER "${LIBRARY_NAME}/version.h"
