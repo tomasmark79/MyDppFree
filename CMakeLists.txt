@@ -167,12 +167,6 @@ target_compile_options(
         "$<$<AND:$<NOT:$<COMPILE_LANG_AND_ID:CXX,MSVC>>,$<PLATFORM_ID:Darwin>>:-Wall;-Wextra;-Wpedantic>"
 )
 
-# message(STATUS "EmojiTools_SOURCE_DIR: ${EmojiTools_SOURCE_DIR}")
-# target_compile_definitions(
-#     ${LIBRARY_NAME}
-#     PRIVATE "$<$<NOT:$<CONFIG:Debug>>:EMOJITOOLS_SOURCE_DIR=\"${EmojiTools_SOURCE_DIR}\">"
-#     PRIVATE "$<$<CONFIG:Debug>:EMOJITOOLS_SOURCE_DIR=\"${EmojiTools_SOURCE_DIR}\">")
-
 # ==============================================================================
 # Set compile features
 # C++ version from Conan Profile has priority over this setting
