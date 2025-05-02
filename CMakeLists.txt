@@ -102,7 +102,7 @@ CPMAddPackage(
     NAME Sunriset
     GITHUB_REPOSITORY tomasmark79/SunrisetFree
     GIT_TAG main)
-#file(COPY ${Sunriset_SOURCE_DIR}/assets DESTINATION ${CMAKE_CURRENT_SOURCE_DIR})    
+#file(COPY ${Sunriset_SOURCE_DIR}/assets DESTINATION ${CMAKE_CURRENT_SOURCE_DIR})
 
 # ==============================================================================
 # include/ for public header files intended for use in other projects or modules.
@@ -190,8 +190,7 @@ target_link_libraries(
     PUBLIC CURL::libcurl
     PUBLIC dpp
     PUBLIC dotname::EmojiTools
-    PUBLIC dotname::Sunriset
-    )
+    PUBLIC dotname::Sunriset)
 
 # ==============================================================================
 # set packageProject arttributes

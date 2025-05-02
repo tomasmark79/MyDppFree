@@ -593,6 +593,13 @@ namespace dotname {
                                    this->getLinuxFastfetchCpp ().substr (0, 8192 - 2) + "\n");
         event.reply (msgFastfetch);
       }
+
+      if (event.command.get_command_name () == "stopbot") {
+        dpp::message msgFastfetch (channelDev, "stoping bot ...\n");
+        event.reply (msgFastfetch);
+        // stop D++
+        m_bot->shutdown ();
+      }
     });
 
     m_bot->on_ready ([&] (const dpp::ready_t& event) {
@@ -633,6 +640,10 @@ namespace dotname {
 
       /* gang */
       m_bot->global_command_create (dpp::slashcommand ("gang", "Will shoot!", m_bot->me.id));
+
+      /* bot */
+      m_bot->global_command_create (
+          dpp::slashcommand ("stopbot", "Stop DSDotBot Bot!", m_bot->me.id));
 
       /* bot */
       m_bot->global_command_create (dpp::slashcommand ("bot", "About DSDotBot Bot!", m_bot->me.id));

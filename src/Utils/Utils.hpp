@@ -141,30 +141,33 @@ namespace DotNameUtils {
       }
       return result;
     }
-  } // namespace Dots 
+  } // namespace Dots
 
   namespace Performance {
-    inline void simpleCpuBenchmark (std::chrono::microseconds duration = std::chrono::microseconds (1000000)) {
+    inline void simpleCpuBenchmark (std::chrono::microseconds duration
+                                    = std::chrono::microseconds (1000000)) {
       LOG_I_STREAM << "╰➤ Simple CPU benchmark" << std::endl;
       LOG_I_STREAM << " ⤷ CPU cores: " << std::thread::hardware_concurrency () << std::endl;
       auto start = std::chrono::high_resolution_clock::now ();
       auto end = start + duration;
       long int iterations = 0;
       while (std::chrono::high_resolution_clock::now () < end) {
-        #if defined(__GNUC__) || defined(__clang__)
-          asm volatile ("nop");
-        #elif defined(_MSC_VER)
-          __nop();
-        #else
-          // Fallback for unsupported platforms
-          std::this_thread::yield();
-        #endif
+#if defined(__GNUC__) || defined(__clang__)
+        asm volatile ("nop");
+#elif defined(_MSC_VER)
+        __nop ();
+#else
+        // Fallback for unsupported platforms
+        std::this_thread::yield ();
+#endif
         ++iterations;
       }
       auto actualEnd = std::chrono::high_resolution_clock::now ();
-      auto actualDuration = std::chrono::duration_cast<std::chrono::milliseconds> (actualEnd - start);
+      auto actualDuration
+          = std::chrono::duration_cast<std::chrono::milliseconds> (actualEnd - start);
       std::string iterationsStr = std::to_string (iterations);
-      LOG_I_STREAM << " ⤷ CPU benchmark duration: " << actualDuration.count () << " ms" << std::endl;
+      LOG_I_STREAM << " ⤷ CPU benchmark duration: " << actualDuration.count () << " ms"
+                   << std::endl;
       LOG_I_STREAM << " ⤷ Total iterations: " << Dots::addDots (iterationsStr) << std::endl;
     }
   } // namespace Performance
