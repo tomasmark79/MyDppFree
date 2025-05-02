@@ -38,50 +38,53 @@
   #include <unistd.h>
 #endif
 
-namespace Utils {
-  namespace FSManager {
+namespace DotNameUtils {
 
-    inline std::string read (const std::string& filename) {
-      std::ifstream file;
-      file.exceptions (std::ifstream::failbit | std::ifstream::badbit);
-      std::stringstream file_stream;
-      try {
-        file.open (filename.c_str ());
-        file_stream << file.rdbuf ();
-        file.close ();
-      } catch (const std::ifstream::failure& e) {
-        LOG_E_STREAM << e.what () << std::endl;
+  namespace FileIO {
+    inline std::string readFile (const std::filesystem::path& filePath) {
+      std::ifstream file (filePath, std::ios::in);
+      if (!file.is_open ()) {
+        throw std::ios_base::failure ("Failed to open file: " + filePath.string ());
       }
-      return file_stream.str ();
+      std::stringstream buffer;
+      buffer << file.rdbuf ();
+      return buffer.str ();
     }
 
-    // overload read to use std::filesystem::path (Windows requires this)
-    inline std::string read (const std::filesystem::path& filePath) {
-      return read (filePath.string ());
+    inline void writeFile (const std::filesystem::path& filePath, const std::string& content) {
+      std::ofstream file (filePath, std::ios::out | std::ios::trunc);
+      if (!file.is_open ()) {
+        throw std::ios_base::failure ("Failed to open file: " + filePath.string ());
+      }
+      file << content;
+    }
+  } // namespace FileIO
+
+  namespace PathUtils {
+    inline std::filesystem::path getParentPath (const std::filesystem::path& filePath) {
+      return filePath.parent_path ();
     }
 
-    inline std::string getExecutePath () {
-      std::string path;
+    inline std::string getFileName (const std::filesystem::path& filePath) {
+      return filePath.filename ().string ();
+    }
+
+    inline bool fileExists (const std::filesystem::path& filePath) {
+      return std::filesystem::exists (filePath);
+    }
+
+    inline std::filesystem::path getStandalonePath () {
+      std::filesystem::path path;
+
 #ifdef _WIN32
       char buffer[MAX_PATH];
       GetModuleFileNameA (NULL, buffer, MAX_PATH);
       path = buffer;
-      size_t pos = path.find_last_of ("\\/");
-      if (pos != std::string::npos) {
-        path = path.substr (0, pos);
-      }
 #elif defined(__APPLE__)
       char buffer[PATH_MAX];
       uint32_t bufferSize = PATH_MAX;
       if (_NSGetExecutablePath (buffer, &bufferSize) == 0) {
-        char realPath[PATH_MAX];
-        if (realpath (buffer, realPath) != nullptr) {
-          path = realPath;
-          size_t pos = path.find_last_of ("/");
-          if (pos != std::string::npos) {
-            path = path.substr (0, pos);
-          }
-        }
+        path = buffer;
       }
 #else
       char buffer[PATH_MAX];
@@ -89,38 +92,83 @@ namespace Utils {
       if (count != -1) {
         buffer[count] = '\0';
         path = buffer;
-        size_t pos = path.find_last_of ("/");
-        if (pos != std::string::npos) {
-          path = path.substr (0, pos);
-        }
       }
 #endif
-
       return path;
     }
 
-  }; // namespace FSManager
+  } // namespace PathUtils
 
-  namespace StringUtils {
-
-    inline std::string trim (const std::string& str) {
-      size_t first = str.find_first_not_of (" \t\n\r\f\v");
-      size_t last = str.find_last_not_of (" \t\n\r\f\v");
-      return (first == std::string::npos) ? "" : str.substr (first, (last - first + 1));
-    }
-
-    inline std::vector<std::string> split (const std::string& str, char delimiter) {
-      std::vector<std::string> tokens;
-      std::stringstream ss (str);
-      std::string token;
-      while (std::getline (ss, token, delimiter)) {
-        tokens.push_back (trim (token));
+  namespace FileManager {
+    inline void createDirectory (const std::filesystem::path& dirPath) {
+      if (!std::filesystem::exists (dirPath)) {
+        std::filesystem::create_directories (dirPath);
       }
-      return tokens;
     }
 
-  } // namespace StringUtils
+    inline void remove (const std::filesystem::path& path) {
+      if (std::filesystem::exists (path)) {
+        std::filesystem::remove_all (path);
+      }
+    }
 
-} // namespace Utils
+    inline std::vector<std::filesystem::path> listFiles (const std::filesystem::path& dirPath) {
+      std::vector<std::filesystem::path> files;
+      for (const auto& entry : std::filesystem::directory_iterator (dirPath)) {
+        files.push_back (entry.path ());
+      }
+      return files;
+    }
+  } // namespace FileManager
+
+  namespace Dots {
+    inline std::string addDots (const std::string& str) {
+      std::string result;
+      for (size_t i = 0; i < str.length (); ++i) {
+        result += str[i];
+        if ((str.length () - i - 1) % 3 == 0 && i != str.length () - 1) {
+          result += '.';
+        }
+      }
+      return result;
+    }
+    inline std::string removeDots (const std::string& str) {
+      std::string result;
+      for (size_t i = 0; i < str.length (); ++i) {
+        if (str[i] != '.') {
+          result += str[i];
+        }
+      }
+      return result;
+    }
+  } // namespace Dots 
+
+  namespace Performance {
+    inline void simpleCpuBenchmark (std::chrono::microseconds duration = std::chrono::microseconds (1000000)) {
+      LOG_I_STREAM << "╰➤ Simple CPU benchmark" << std::endl;
+      LOG_I_STREAM << " ⤷ CPU cores: " << std::thread::hardware_concurrency () << std::endl;
+      auto start = std::chrono::high_resolution_clock::now ();
+      auto end = start + duration;
+      long int iterations = 0;
+      while (std::chrono::high_resolution_clock::now () < end) {
+        #if defined(__GNUC__) || defined(__clang__)
+          asm volatile ("nop");
+        #elif defined(_MSC_VER)
+          __nop();
+        #else
+          // Fallback for unsupported platforms
+          std::this_thread::yield();
+        #endif
+        ++iterations;
+      }
+      auto actualEnd = std::chrono::high_resolution_clock::now ();
+      auto actualDuration = std::chrono::duration_cast<std::chrono::milliseconds> (actualEnd - start);
+      std::string iterationsStr = std::to_string (iterations);
+      LOG_I_STREAM << " ⤷ CPU benchmark duration: " << actualDuration.count () << " ms" << std::endl;
+      LOG_I_STREAM << " ⤷ Total iterations: " << Dots::addDots (iterationsStr) << std::endl;
+    }
+  } // namespace Performance
+
+} // namespace DotNameUtils
 
 #endif // UTILS_HPP

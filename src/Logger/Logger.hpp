@@ -66,6 +66,7 @@ private:
   std::mutex logMutex_;
   std::ostringstream messageStream_;
   std::ofstream logFile_;
+  bool isSkipLine_ = false;
 
 protected:
   Logger () = default;
@@ -84,6 +85,15 @@ public:
   static Logger& getInstance () {
     static Logger instance;
     return instance;
+  }
+
+public:
+  static void setSkipLine (bool isSkipLine) {
+    getInstance ().isSkipLine_ = isSkipLine;
+  }
+
+  static bool isSkipLine () {
+    return getInstance ().isSkipLine_;
   }
 
 public:
@@ -190,6 +200,8 @@ public:
 #ifdef _WIN32
     SetConsoleTextAttribute (GetStdHandle (STD_OUTPUT_HANDLE),
                              FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
+#elif defined(__EMSCRIPTEN__)
+// no colors, no reset
 #else
     std::cout << "\033[0m";
 #endif
@@ -229,6 +241,8 @@ public:
   void setConsoleColor (Level level) {
 #ifdef _WIN32
     setConsoleColorWindows (level);
+#elif EMSCRIPTEN
+      // no colors
 #else
     setConsoleColorUnix (level);
 #endif
@@ -243,10 +257,11 @@ private:
 
   void logToStream (std::ostream& stream, Level level, const std::string& message,
                     const std::string& caller, const std::tm& now_tm) {
-    setConsoleColor (level);
     stream << buildHeader (now_tm, caller, level) << message;
     resetConsoleColor ();
-    stream << std::endl; // přidání nového řádku
+    if (isSkipLine_) {
+      stream << std::endl;
+    }
   }
 
   std::string buildHeader (const std::tm& now_tm, const std::string& caller, Level level) const {

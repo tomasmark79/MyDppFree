@@ -1,11 +1,10 @@
 cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
 
-# MIT License
-# Copyright (c) 2024-2025 Tomáš Mark
+# MIT License Copyright (c) 2024-2025 Tomáš Mark
 
-#+-+-+-+-+-+-+-+-+-+-+
-#|s|t|a|n|d|a|l|o|n|e|
-#+-+-+-+-+-+-+-+-+-+-+
+# +-+-+-+-+-+-+-+-+-+-+
+# |s|t|a|n|d|a|l|o|n|e|
+# +-+-+-+-+-+-+-+-+-+-+
 
 cmake_policy(SET CMP0048 NEW) # project() command manages VERSION variables
 cmake_policy(SET CMP0076 NEW) # target_sources() command creates usage requirements
@@ -33,13 +32,17 @@ include(../cmake/ccache.cmake)
 option(ENABLE_CCACHE "Enable ccache" ON)
 # === linting C/C++ code
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+# === gtest
+option(ENABLE_GTESTS "Enable gtests" ON)
+# === emscripten pthread
+option(ENABLE_EMSCRIPTEN_PTHREAD "Enable pthread for emscripten" ON)
 
 # ==============================================================================
 # Project attributes
 # ==============================================================================
 set(STANDALONE_NAME MyDppApp)
 string(TOLOWER "${STANDALONE_NAME}" STANDALONE_NAME_LOWER)
-set(STANDALONE_NAMESPACE dsdotname)
+set(STANDALONE_NAMESPACE dotname)
 project(
     ${STANDALONE_NAME}
     LANGUAGES C CXX ASM
@@ -69,7 +72,7 @@ cpm_licenses_create_disclaimer_target(
     "${CMAKE_CURRENT_BINARY_DIR}/${STANDALONE_NAME}_third_party.txt" "${CPM_PACKAGES}")
 CPMAddPackage(
     GITHUB_REPOSITORY jarro2783/cxxopts
-    VERSION 3.2.0
+    VERSION 3.2.1
     OPTIONS "CXXOPTS_BUILD_EXAMPLES NO" "CXXOPTS_BUILD_TESTS NO" "CXXOPTS_ENABLE_INSTALL NO")
 # ==============================================================================
 # src/ for source files and `internal` header files that are not intended for public use
@@ -100,14 +103,24 @@ apply_hardening(${STANDALONE_NAME})
 apply_sanitizers(${STANDALONE_NAME})
 
 # ==============================================================================
-# Set compile properties
+# Set target properties
 # ==============================================================================
-set_target_properties(${STANDALONE_NAME} PROPERTIES OUTPUT_NAME "${STANDALONE_NAME}")
+if(CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+    message(STATUS "Emscripten detected")
+    set_target_properties(${STANDALONE_NAME} PROPERTIES SUFFIX ".html")
+    if(ENABLE_EMSCRIPTEN_PTHREAD)
+        set_target_properties(
+            ${STANDALONE_NAME} PROPERTIES COMPILE_FLAGS
+                                          "-Os -pthread -s USE_PTHREADS=1 -s PTHREAD_POOL_SIZE=4")
+        set_target_properties(${STANDALONE_NAME}
+                              PROPERTIES LINK_FLAGS "-Os -s WASM=1 -pthread -s USE_PTHREADS=1")
+    endif()
+endif()
 
 # ==============================================================================
 # Set linking
 # ==============================================================================
-target_link_libraries(${STANDALONE_NAME} PRIVATE dsdotname::MyDpp cxxopts)
+target_link_libraries(${STANDALONE_NAME} PRIVATE dotname::MyDpp cxxopts)
 
 # ==============================================================================
 # Add missing installation exports
@@ -120,3 +133,14 @@ install(TARGETS ${STANDALONE_NAME} RUNTIME DESTINATION bin)
 # ==============================================================================
 include(../cmake/tmplt-assets.cmake)
 apply_assets_processing_standalone()
+
+# ==============================================================================
+# GTests processing via interface
+# ==============================================================================
+if(ENABLE_GTESTS)
+    message(STATUS "GTESTS enabled")
+    add_library(standalone_common INTERFACE)
+    target_link_libraries(standalone_common INTERFACE dotname::MyDpp cxxopts)
+    add_library(dotname::standalone_common ALIAS standalone_common)
+    add_subdirectory(tests)
+endif()

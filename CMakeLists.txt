@@ -40,7 +40,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # ==============================================================================
 set(LIBRARY_NAME MyDpp)
 string(TOLOWER "${LIBRARY_NAME}" LIBRARY_NAME_LOWER)
-set(LIBRARY_NAMESPACE dsdotname)
+set(LIBRARY_NAMESPACE dotname)
 project(
     ${LIBRARY_NAME}
     VERSION 0.0.1
@@ -102,7 +102,7 @@ CPMAddPackage(
     NAME Sunriset
     GITHUB_REPOSITORY tomasmark79/SunrisetFree
     GIT_TAG main)
-#file(COPY ${Sunriset_SOURCE_DIR}/assets DESTINATION ${CMAKE_CURRENT_SOURCE_DIR})
+#file(COPY ${Sunriset_SOURCE_DIR}/assets DESTINATION ${CMAKE_CURRENT_SOURCE_DIR})    
 
 # ==============================================================================
 # include/ for public header files intended for use in other projects or modules.
@@ -162,7 +162,7 @@ target_compile_options(
     ${LIBRARY_NAME}
     PUBLIC "$<$<COMPILE_LANG_AND_ID:CXX,MSVC>:/permissive-;/W4>"
     PUBLIC
-        "$<$<AND:$<NOT:$<COMPILE_LANG_AND_ID:CXX,MSVC>>,$<NOT:$<PLATFORM_ID:Darwin>>>:-Wall;-Wextra;-Wpedantic;-MMD;-MP>"
+        "$<$<AND:$<NOT:$<COMPILE_LANG_AND_ID:CXX,MSVC>>,$<NOT:$<PLATFORM_ID:Darwin>>,$<NOT:$<CXX_COMPILER_ID:Clang>>>:-Wall;-Wextra;-Wpedantic;-MMD;-MP>"
     PUBLIC
         "$<$<AND:$<NOT:$<COMPILE_LANG_AND_ID:CXX,MSVC>>,$<PLATFORM_ID:Darwin>>:-Wall;-Wextra;-Wpedantic>"
 )
@@ -210,7 +210,6 @@ packageProject(
     # (optional) option to install only header files with matching pattern
     INCLUDE_HEADER_PATTERN "*.h;*.hpp;*.hh;*.hxx"
     # semicolon separated list of the project's dependencies
-    # DEPENDENCIES "zlib#1.2.11;fmt#11.1.1;CPMLicenses.cmake@0.0.7;nlohmann_json#3.11.2"
     DEPENDENCIES "fmt#11.1.0;CPMLicenses.cmake@0.0.7;Sunriset#0.0.1;EmojiTools#0.0.1"
     # (optional) create a header containing the version info
     # Note: that the path to headers should be lowercase, but is not enforced
