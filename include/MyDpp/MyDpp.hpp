@@ -13,6 +13,7 @@
 #include <memory>
 #include <random>
 #include <string>
+#include <vector>
 
 // Public API
 
@@ -24,6 +25,54 @@ namespace dotname {
     std::filesystem::path assetsPath_;
 
   public:
+    // First define the structures
+    struct RSSItem {
+      std::string title;
+      std::string link;
+      std::string description;
+      std::string pubDate; // pro datum publikace
+      std::string guid;    // pro jedinečný identifikátor
+
+      // Constructor
+      RSSItem () = default;
+      RSSItem (const std::string& t, const std::string& l, const std::string& d,
+               const std::string& date = "", const std::string& id = "")
+          : title (t), link (l), description (d), pubDate (date), guid (id) {
+      }
+    };
+
+    struct RSSFeed {
+      std::string title;
+      std::string description;
+      std::string link;
+      std::vector<RSSItem> items;
+
+      // Methods for manipulation
+      void addItem (const RSSItem& item) {
+        items.push_back (item);
+      }
+
+      size_t getItemCount () const {
+        return items.size ();
+      }
+
+      std::string getTitle () const {
+        return title;
+      }
+      std::string getDescription () const {
+        return description;
+      }
+      std::string getLink () const {
+        return link;
+      }
+      std::vector<RSSItem> getItems () const {
+        return items;
+      }
+
+
+      std::string toString () const;
+    };
+
     MyDpp ();
     MyDpp (const std::filesystem::path& assetsPath);
     ~MyDpp ();
@@ -57,7 +106,13 @@ namespace dotname {
     std::string getCzechExchangeRate ();
     std::string getCurrentTime ();
     std::string getSunriset ();
+
+    RSSFeed feedRootCz;
+    std::string getRootcz ();
+    std::string parseRSS (const std::string& xmlData);
     int getRandom (int min, int max);
+
+    RSSFeed parseRSSToStruct (const std::string& xmlData);
 
   private:
     std::unique_ptr<dpp::cluster> m_bot;

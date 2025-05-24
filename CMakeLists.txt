@@ -4,12 +4,11 @@ cmake_policy(SET CMP0048 NEW) # project() command manages VERSION variables
 cmake_policy(SET CMP0076 NEW) # target_sources() command creates usage requirements
 cmake_policy(SET CMP0091 NEW) # MSVC runtime library flags are selected by an abstraction
 
-# MIT License
-# Copyright (c) 2024-2025 Tomáš Mark
+# MIT License Copyright (c) 2024-2025 Tomáš Mark
 
-#+-+-+-+-+-+-+-+
-#|l|i|b|r|a|r|y|
-#+-+-+-+-+-+-+-+
+# +-+-+-+-+-+-+-+
+# |l|i|b|r|a|r|y|
+# +-+-+-+-+-+-+-+
 
 # === shared libraries
 option(BUILD_SHARED_LIBS "Build using shared libraries" OFF)
@@ -55,18 +54,25 @@ if(PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
     )
 endif()
 
+if(EXISTS ${CMAKE_BINARY_DIR}/conan_toolchain.cmake)
+    # Explicitně nastavte OpenSSL root pro Conan
+    set(OpenSSL_ROOT_DIR "${CMAKE_BINARY_DIR}/full_deploy/host/openssl/3.4.1/Debug/x86_64")
+    set(OPENSSL_ROOT_DIR "${CMAKE_BINARY_DIR}/full_deploy/host/openssl/3.4.1/Debug/x86_64")
+    message(STATUS "Setting OpenSSL_ROOT_DIR to: ${OpenSSL_ROOT_DIR}")
+endif()
+
 # ==============================================================================
 # System / Conan dependencies
 # ==============================================================================
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
 list(APPEND CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR})
 find_package(fmt REQUIRED)
+find_package(tinyxml2)
 find_package(ZLIB REQUIRED)
-#find_package(nlohmann_json REQUIRED)
-#find_package(yaml-cpp REQUIRED)
-find_package(OpenSSL REQUIRED)
 find_package(Opus REQUIRED)
 find_package(CURL REQUIRED)
+find_package(OpenSSL REQUIRED)
+
 
 # ==============================================================================
 # CPM.cmake dependencies - take care conflicts
@@ -81,14 +87,14 @@ cpm_licenses_create_disclaimer_target(
     write-licenses-${LIBRARY_NAME} "${CMAKE_CURRENT_BINARY_DIR}/${LIBRARY_NAME}_third_party.txt"
     "${CPM_PACKAGES}")
 
-# brainboxdotcc/DPP
-# https://github.com/brainboxdotcc/DPP/blob/master/CMakeLists.txt
+# brainboxdotcc/DPP https://github.com/brainboxdotcc/DPP/blob/master/CMakeLists.txt
+# important "CONAN_EXPORTED ON" has to be used together with Conan
 CPMAddPackage(
     NAME dpp
     GITHUB_REPOSITORY brainboxdotcc/DPP
     GIT_TAG v10.1.2
-    OPTIONS "BUILD_SHARED_LIBS ON" "DPP_BUILD_TEST OFF" "DPP_INSTALL ON" "DPP_NO_CORO ON")
-find_package(dpp REQUIRED)
+    OPTIONS "BUILD_SHARED_LIBS ON" "DPP_BUILD_TEST OFF" "DPP_INSTALL ON" "DPP_NO_CORO ON"
+            "CONAN_EXPORTED ON")
 
 # emojitools
 CPMAddPackage(
@@ -102,7 +108,11 @@ CPMAddPackage(
     NAME Sunriset
     GITHUB_REPOSITORY tomasmark79/SunrisetFree
     GIT_TAG main)
-#file(COPY ${Sunriset_SOURCE_DIR}/assets DESTINATION ${CMAKE_CURRENT_SOURCE_DIR})
+# file(COPY ${Sunriset_SOURCE_DIR}/assets DESTINATION ${CMAKE_CURRENT_SOURCE_DIR})
+
+message(STATUS "---------------------CMAKE_TOOLCHAIN_FILE: ${CMAKE_TOOLCHAIN_FILE}")
+message(STATUS "OpenSSL_ROOT_DIR: ${OpenSSL_ROOT_DIR}")
+message(STATUS "CMAKE_PREFIX_PATH: ${CMAKE_PREFIX_PATH}")
 
 # ==============================================================================
 # include/ for public header files intended for use in other projects or modules.
@@ -157,7 +167,8 @@ target_include_directories(
 # ==============================================================================
 # Set compile options
 # ==============================================================================
-# note: generator expressions are evaluated during generation of the buildsystem, and not during processing of CMakeLists.txt files
+# note: generator expressions are evaluated during generation of the buildsystem, and not during
+# processing of CMakeLists.txt files
 target_compile_options(
     ${LIBRARY_NAME}
     PUBLIC "$<$<COMPILE_LANG_AND_ID:CXX,MSVC>:/permissive-;/W4>"
@@ -168,8 +179,7 @@ target_compile_options(
 )
 
 # ==============================================================================
-# Set compile features
-# C++ version from Conan Profile has priority over this setting
+# Set compile features C++ version from Conan Profile has priority over this setting
 # ==============================================================================
 target_compile_features(${LIBRARY_NAME} PUBLIC cxx_std_17)
 set(CMAKE_CXX_STANDARD 17)
@@ -183,9 +193,11 @@ target_link_libraries(
     ${LIBRARY_NAME}
     PRIVATE fmt::fmt
     PRIVATE ZLIB::ZLIB
-    #  PRIVATE nlohmann_json::nlohmann_json
-    #  PRIVATE yaml-cpp
-    PUBLIC OpenSSL::SSL
+    # PRIVATE nlohmann_json::nlohmann_json PRIVATE yaml-cpp
+    PUBLIC openssl::openssl
+    PUBLIC ssl
+    PUBLIC crypto
+    PUBLIC tinyxml2::tinyxml2
     PUBLIC Opus::opus
     PUBLIC CURL::libcurl
     PUBLIC dpp
@@ -210,28 +222,27 @@ packageProject(
     INCLUDE_HEADER_PATTERN "*.h;*.hpp;*.hh;*.hxx"
     # semicolon separated list of the project's dependencies
     DEPENDENCIES "fmt#11.1.0;CPMLicenses.cmake@0.0.7;Sunriset#0.0.1;EmojiTools#0.0.1"
-    # (optional) create a header containing the version info
-    # Note: that the path to headers should be lowercase, but is not enforced
+    # (optional) create a header containing the version info Note: that the path to headers should
+    # be lowercase, but is not enforced
     VERSION_HEADER "${LIBRARY_NAME}/version.h"
     # (optional) create an export header using GenerateExportHeader module
     EXPORT_HEADER "${LIBRARY_NAME}/export.h"
     # (optional) install your library with a namespace (Note: do NOT add extra '::')
     NAMESPACE ${LIBRARY_NAMESPACE}
-    # (optional) define the project's version compatibility, defaults to `AnyNewerVersion`
-    # supported values: `AnyNewerVersion|SameMajorVersion|SameMinorVersion|MyDppAppVersion`
+    # (optional) define the project's version compatibility, defaults to `AnyNewerVersion` supported
+    # values: `AnyNewerVersion|SameMajorVersion|SameMinorVersion|MyDppAppVersion`
     COMPATIBILITY AnyNewerVersion
     # (optional) option to disable the versioning of install destinations
     DISABLE_VERSION_SUFFIX YES
-    # (optional) option to ignore target architecture for package resolution
-    # defaults to YES for header only (i.e. INTERFACE) libraries
+    # (optional) option to ignore target architecture for package resolution defaults to YES for
+    # header only (i.e. INTERFACE) libraries
     ARCH_INDEPENDENT YES
     # (optional) option to generate CPack variables
-    CPACK
-        YES
-        # (optional) relative install directory for runtimes: bins, libs, archives
-        # by default libs will be installed to <...>/lib/<packagename-version>/
-        # / - means relative to <...>/lib, i.e. install libs to <...>/lib/, bins to <...>/bin/, etc
-        RUNTIME_DESTINATION /)
+    CPACK YES
+          # (optional) relative install directory for runtimes: bins, libs, archives by default libs
+          # will be installed to <...>/lib/<packagename-version>/ / - means relative to <...>/lib,
+          # i.e. install libs to <...>/lib/, bins to <...>/bin/, etc
+          RUNTIME_DESTINATION /)
 
 # ==============================================================================
 # Add missing installation exports

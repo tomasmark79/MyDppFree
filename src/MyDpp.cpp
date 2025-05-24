@@ -16,6 +16,8 @@
 #include <string>
 #include <thread>
 
+#include "tinyxml2.h"
+
 // TODO
 // pooling required better design pattern
 
@@ -501,6 +503,77 @@ namespace dotname {
            + sunrisetTools->doubleTo24Time (set + 2) + " for today!";
   }
 
+  std::string MyDpp::parseRSS (const std::string& xmlData) {
+    LOG_D_STREAM << "Parsing RSS feed..." << std::endl;
+    LOG_D_STREAM << "XML data:\n" << xmlData << std::endl;
+
+    std::string message = "RSS feed:\n";
+    tinyxml2::XMLDocument doc;
+    doc.Parse (xmlData.c_str ());
+
+    tinyxml2::XMLElement* channel = doc.FirstChildElement ("rss")->FirstChildElement ("channel");
+    if (channel == nullptr) {
+      LOG_E_STREAM << "Error: RSS feed is not valid." << std::endl;
+      return "";
+    }
+    tinyxml2::XMLElement* item = channel->FirstChildElement ("item");
+    while (item) {
+      const char* title = item->FirstChildElement ("title")->GetText ();
+      const char* link = item->FirstChildElement ("link")->GetText ();
+      const char* description = item->FirstChildElement ("description")->GetText ();
+
+      if (title && link && description) {
+        LOG_I_STREAM << "Title: " << title << std::endl;
+        LOG_I_STREAM << "Link: " << link << std::endl;
+        LOG_I_STREAM << "Description: " << description << std::endl;
+        LOG_I_STREAM << "------------------------" << std::endl;
+
+        message += "Title: " + std::string (title) + "\n";
+        message += "Link: " + std::string (link) + "\n";
+        message += "Description: " + std::string (description) + "\n";
+        message += "------------------------\n";
+      }
+      item = item->NextSiblingElement ("item");
+    }
+    return message;
+  }
+
+  std::string MyDpp::getRootcz () {
+    std::string msg = "";
+    std::string msgFinal = "";
+    CURL* curl;
+    CURLcode res;
+    std::string rawTxtBuffer;
+    curl = curl_easy_init ();
+    if (curl) {
+      curl_easy_setopt (curl, CURLOPT_SSL_VERIFYPEER, 0L); /* temporary - todo cert */
+      curl_easy_setopt (curl, CURLOPT_URL, "https://www.root.cz/rss/clanky/");
+      curl_easy_setopt (curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+      curl_easy_setopt (curl, CURLOPT_WRITEDATA, &rawTxtBuffer);
+
+      res = curl_easy_perform (curl);
+
+      if (res != CURLE_OK) {
+        LOG_E_STREAM << "curl_easy_perform() failed: " << curl_easy_strerror (res) << std::endl;
+      } else {
+        // LOG_D_STREAM << "Downloaded content:\n" << rawTxtBuffer << std::endl;
+        parseRSSToStruct (rawTxtBuffer);
+        for (const auto& item : feedRootCz.getItems ()) {
+          LOG_I_STREAM << "Title: " << item.title << std::endl;
+          LOG_I_STREAM << "Link: " << item.link << std::endl;
+          msg = "[" + item.title + "](" + item.link + ")\n";
+          if (msg.size () + msgFinal.size () < 2000) {
+            msgFinal += msg;
+          }
+        }
+        int len = msgFinal.length ();
+        return msgFinal;
+      }
+      curl_easy_cleanup (curl);
+    }
+    return "Error: Could not get the Bitcoin price!";
+  }
+
   bool MyDpp::loadVariousBotCommands () {
 
     m_bot->on_log ([&] (const dpp::log_t& log) {
@@ -574,6 +647,17 @@ namespace dotname {
         event.reply (buf);
       }
 
+      if (event.command.get_command_name () == "rss") {
+        std::string buf = getRootcz ();
+        if (buf.empty ()) {
+          dpp::message msg (channelDev, "Error: Could not get the RSS feed!");
+          event.reply (msg);
+          return;
+        }
+        LOG_I_STREAM << buf << std::endl;
+        event.reply (buf);
+      }
+
       if (event.command.get_command_name () == "ping") {
         event.reply ("Pong! 🏓");
       }
@@ -632,6 +716,9 @@ namespace dotname {
       /* emoji */
       m_bot->global_command_create (dpp::slashcommand ("emoji", "Get random Emoji!", m_bot->me.id));
 
+      /* rss */
+      m_bot->global_command_create (dpp::slashcommand ("rss", "Get rss feed!", m_bot->me.id));
+
       /* ping */
       m_bot->global_command_create (dpp::slashcommand ("ping", "Ping pong!", m_bot->me.id));
 
@@ -669,4 +756,83 @@ namespace dotname {
     return random;
   }
 
+  MyDpp::RSSFeed MyDpp::parseRSSToStruct (const std::string& xmlData) {
+    LOG_D_STREAM << "Parsing RSS feed to structure..." << std::endl;
+
+    tinyxml2::XMLDocument doc;
+    doc.Parse (xmlData.c_str ());
+
+    tinyxml2::XMLElement* rssElement = doc.FirstChildElement ("rss");
+    if (!rssElement) {
+      LOG_E_STREAM << "Error: No RSS root element found." << std::endl;
+      return feedRootCz;
+    }
+
+    tinyxml2::XMLElement* channel = rssElement->FirstChildElement ("channel");
+    if (!channel) {
+      LOG_E_STREAM << "Error: RSS feed is not valid." << std::endl;
+      return feedRootCz;
+    }
+
+    // Parse channel info
+    if (auto titleElement = channel->FirstChildElement ("title")) {
+      feedRootCz.title = titleElement->GetText () ? titleElement->GetText () : "";
+    }
+    if (auto descElement = channel->FirstChildElement ("description")) {
+      feedRootCz.description = descElement->GetText () ? descElement->GetText () : "";
+    }
+    if (auto linkElement = channel->FirstChildElement ("link")) {
+      feedRootCz.link = linkElement->GetText () ? linkElement->GetText () : "";
+    }
+
+    // Parse items
+    tinyxml2::XMLElement* item = channel->FirstChildElement ("item");
+    while (item) {
+      RSSItem rssItem;
+
+      if (auto titleElement = item->FirstChildElement ("title")) {
+        rssItem.title = titleElement->GetText () ? titleElement->GetText () : "";
+      }
+      if (auto linkElement = item->FirstChildElement ("link")) {
+        rssItem.link = linkElement->GetText () ? linkElement->GetText () : "";
+      }
+      if (auto descElement = item->FirstChildElement ("description")) {
+        rssItem.description = descElement->GetText () ? descElement->GetText () : "";
+      }
+      if (auto pubDateElement = item->FirstChildElement ("pubDate")) {
+        rssItem.pubDate = pubDateElement->GetText () ? pubDateElement->GetText () : "";
+      }
+      if (auto guidElement = item->FirstChildElement ("guid")) {
+        rssItem.guid = guidElement->GetText () ? guidElement->GetText () : "";
+      }
+
+      if (!rssItem.title.empty () && !rssItem.link.empty ()) {
+        feedRootCz.addItem (rssItem);
+        LOG_I_STREAM << "Added item: " << rssItem.title << std::endl;
+      }
+
+      item = item->NextSiblingElement ("item");
+    }
+
+    LOG_I_STREAM << "Parsed " << feedRootCz.getItemCount () << " RSS items" << std::endl;
+    return feedRootCz;
+  }
+
+  // Helper method to convert RSSFeed back to string if needed
+  std::string MyDpp::RSSFeed::toString () const {
+    std::string result = "RSS Feed: " + title + "\n";
+    result += "Description: " + description + "\n";
+    result += "Link: " + link + "\n\n";
+
+    for (const auto& item : items) {
+      result += "Title: " + item.title + "\n";
+      result += "Link: " + item.link + "\n";
+      result += "Description: " + item.description + "\n";
+      if (!item.pubDate.empty ()) {
+        result += "Published: " + item.pubDate + "\n";
+      }
+      result += "------------------------\n";
+    }
+    return result;
+  }
 } // namespace dotname
